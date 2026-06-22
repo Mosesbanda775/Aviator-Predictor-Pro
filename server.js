@@ -4,20 +4,12 @@ const path = require('path');
 require('dotenv').config();
 
 const config = require('./config.json');
+const AppIntegration = require('./src/app-integration');
 
 const app = express();
 const PORT = process.env.HTTP_PORT || config.server.httpPort || 3000;
 
-const predictionStats = {
-  totalSignals: 0,
-  successfulPredictions: 0,
-  accuracyRate: 0,
-  uptime: Date.now(),
-  lastSignalTime: null
-};
-
-const signalHistory = [];
-const MAX_HISTORY_SIZE = config.signals.historyBufferSize || 100;
+let appIntegration = null;
 
 app.use(cors({
   origin: config.security.cors.origins || ['http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -30,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/health', (req, res) => {
-  const uptime = Math.floor((Date.now() - predictionStats.uptime) / 1000);
+  const uptime = Math.floor(process.uptime());
 
   res.json({
     status: 'ok',
@@ -40,22 +32,16 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     websocket: {
       port: config.server.websocketPort,
-      status: 'available'
+      status: appIntegration && appIntegration.getWebSocketServer() ? 'running' : 'initializing'
     }
   });
 });
 
 app.get('/api/stats', (req, res) => {
-  const uptime = Math.floor((Date.now() - predictionStats.uptime) / 1000);
+  const uptime = Math.floor(process.uptime());
 
-  const stats = {
-    totalSignals: predictionStats.totalSignals,
-    successfulPredictions: predictionStats.successfulPredictions,
-    accuracyRate: predictionStats.totalSignals > 0
-      ? parseFloat(((predictionStats.successfulPredictions / predictionStats.totalSignals) * 100).toFixed(2))
-      : 0,
+  let stats = {
     uptime: uptime,
-    lastSignalTime: predictionStats.lastSignalTime,
     currentTime: new Date().toISOString(),
     config: {
       confidenceThreshold: config.prediction.confidenceThreshold,
@@ -64,6 +50,15 @@ app.get('/api/stats', (req, res) => {
     }
   };
 
+  if (appIntegration && appIntegration.getBroadcaster()) {
+    const broadcasterStats = appIntegration.getBroadcaster().getStatistics();
+    stats = {
+      ...stats,
+      ...broadcasterStats.broadcaster,
+      predictionEngine: broadcasterStats.predictionEngine
+    };
+  }
+
   res.json(stats);
 });
 
@@ -71,17 +66,25 @@ app.get('/api/history', (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const offset = parseInt(req.query.offset) || 0;
 
+  const MAX_HISTORY_SIZE = config.signals.historyBufferSize || 100;
   const validLimit = Math.min(Math.max(limit, 1), MAX_HISTORY_SIZE);
   const validOffset = Math.max(offset, 0);
 
-  const paginatedHistory = signalHistory.slice(validOffset, validOffset + validLimit);
+  let history = [];
+  let total = 0;
+
+  if (appIntegration && appIntegration.getBroadcaster()) {
+    const allHistory = appIntegration.getBroadcaster().getSignalHistory(MAX_HISTORY_SIZE);
+    history = allHistory.slice(validOffset, validOffset + validLimit);
+    total = allHistory.length;
+  }
 
   res.json({
-    history: paginatedHistory,
-    total: signalHistory.length,
+    history: history,
+    total: total,
     limit: validLimit,
     offset: validOffset,
-    hasMore: (validOffset + validLimit) < signalHistory.length
+    hasMore: (validOffset + validLimit) < total
   });
 });
 
@@ -111,35 +114,36 @@ app.use((req, res) => {
   });
 });
 
-function updateStats(signal) {
-  predictionStats.totalSignals++;
-  predictionStats.lastSignalTime = signal.timestamp;
+if (require.main === module) {
+  appIntegration = new AppIntegration(app, {
+    httpPort: PORT,
+    enableMockData: config.server.environment === 'development'
+  });
 
-  if (signal.success !== undefined && signal.success === true) {
-    predictionStats.successfulPredictions++;
-  }
+  appIntegration.initialize();
+  appIntegration.start();
 
-  predictionStats.accuracyRate = predictionStats.totalSignals > 0
-    ? parseFloat(((predictionStats.successfulPredictions / predictionStats.totalSignals) * 100).toFixed(2))
-    : 0;
-}
-
-function addToHistory(signal) {
-  signalHistory.unshift(signal);
-
-  if (signalHistory.length > MAX_HISTORY_SIZE) {
-    signalHistory.pop();
-  }
-}
-
-app.listen(PORT, () => {
-  console.log(`HTTP Server running on port ${PORT}`);
   console.log(`Environment: ${config.server.environment}`);
-  console.log(`WebSocket will be available on port ${config.server.websocketPort}`);
   console.log(`API Endpoints:`);
   console.log(`  - GET /api/health - Server health check`);
   console.log(`  - GET /api/stats - Prediction statistics`);
   console.log(`  - GET /api/history - Signal history`);
-});
 
-module.exports = { app, updateStats, addToHistory };
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    if (appIntegration) {
+      appIntegration.stop();
+    }
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    if (appIntegration) {
+      appIntegration.stop();
+    }
+    process.exit(0);
+  });
+}
+
+module.exports = { app, AppIntegration };
