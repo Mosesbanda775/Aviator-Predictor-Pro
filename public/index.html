@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator Predictor Pro - Live Signal Connect</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="branding">
+                <h1 class="app-title">✈️ Aviator Predictor Pro</h1>
+                <p class="app-subtitle">Live Signal Connect</p>
+            </div>
+            <div class="connection-status">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text" id="statusText">Disconnected</span>
+                </div>
+                <div class="latency-display" id="latencyDisplay">
+                    <span class="latency-label">Latency:</span>
+                    <span class="latency-value" id="latencyValue">--</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Connection Controls -->
+        <section class="connection-controls">
+            <button class="btn btn-primary" id="connectBtn">
+                <span class="btn-icon">🔌</span>
+                <span class="btn-text">Connect</span>
+            </button>
+            <button class="btn btn-secondary" id="disconnectBtn" disabled>
+                <span class="btn-icon">⚡</span>
+                <span class="btn-text">Disconnect</span>
+            </button>
+            <button class="btn btn-tertiary" id="settingsBtn">
+                <span class="btn-icon">⚙️</span>
+                <span class="btn-text">Settings</span>
+            </button>
+        </section>
+
+        <!-- Current Signal Display Area -->
+        <section class="signal-display">
+            <h2 class="section-title">Current Prediction</h2>
+            <div class="signal-card current-signal" id="currentSignal">
+                <div class="signal-header">
+                    <div class="signal-type" id="signalType">
+                        <span class="signal-icon">⏳</span>
+                        <span class="signal-label">WAIT</span>
+                    </div>
+                    <div class="signal-confidence">
+                        <span class="confidence-label">Confidence</span>
+                        <span class="confidence-value" id="confidenceValue">--</span>
+                    </div>
+                </div>
+                <div class="signal-body">
+                    <div class="signal-data">
+                        <div class="data-item">
+                            <span class="data-label">Predicted Multiplier</span>
+                            <span class="data-value" id="predictedMultiplier">--</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Risk Level</span>
+                            <span class="data-value" id="riskLevel">--</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Timestamp</span>
+                            <span class="data-value" id="signalTimestamp">--</span>
+                        </div>
+                    </div>
+                    <div class="signal-message" id="signalMessage">
+                        Waiting for signal...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Dashboard -->
+        <section class="statistics-dashboard">
+            <h2 class="section-title">Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Accuracy Rate</div>
+                        <div class="stat-value" id="accuracyRate">0%</div>
+                        <div class="stat-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="accuracyProgress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Signals</div>
+                        <div class="stat-value" id="totalSignals">0</div>
+                        <div class="stat-breakdown">
+                            <span class="breakdown-item bet">BET: <span id="betCount">0</span></span>
+                            <span class="breakdown-item wait">WAIT: <span id="waitCount">0</span></span>
+                            <span class="breakdown-item cashout">CASH_OUT: <span id="cashoutCount">0</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value" id="uptime">00:00:00</div>
+                        <div class="stat-subtext">Session Duration</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Signal History Section -->
+        <section class="signal-history">
+            <h2 class="section-title">Signal History <span class="history-count">(Last 10)</span></h2>
+            <div class="history-container" id="historyContainer">
+                <div class="history-empty">
+                    <span class="empty-icon">📭</span>
+                    <p class="empty-message">No signal history yet. Connect to start receiving signals.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Settings Modal (Hidden by default) -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Settings</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label for="serverUrl" class="setting-label">Server URL</label>
+                    <input type="text" id="serverUrl" class="setting-input" placeholder="ws://localhost:8080" value="ws://localhost:8080">
+                </div>
+                <div class="setting-group">
+                    <label for="notificationsEnabled" class="setting-label">
+                        <input type="checkbox" id="notificationsEnabled" class="setting-checkbox" checked>
+                        Enable Notifications
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label for="soundEnabled" class="setting-label">
+                        <input type="checkbox" id="soundEnabled" class="setting-checkbox" checked>
+                        Enable Sound Alerts
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label for="confidenceThreshold" class="setting-label">Minimum Confidence Threshold</label>
+                    <input type="range" id="confidenceThreshold" class="setting-range" min="0" max="100" value="70">
+                    <span class="setting-value" id="confidenceThresholdValue">70%</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelSettings">Cancel</button>
+                <button class="btn btn-primary" id="saveSettings">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>&copy; 2024 Aviator Predictor Pro. Live signals powered by AI analysis.</p>
+        <p class="disclaimer">Disclaimer: For educational purposes only. Gambling involves risk.</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

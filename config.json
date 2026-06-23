@@ -1,0 +1,66 @@
+{
+  "server": {
+    "websocketPort": 8080,
+    "httpPort": 3000,
+    "environment": "development"
+  },
+  "websocket": {
+    "pingInterval": 25000,
+    "pingTimeout": 5000,
+    "maxConnections": 1000,
+    "reconnectionAttempts": 5,
+    "reconnectionDelay": 1000
+  },
+  "prediction": {
+    "confidenceThreshold": 65,
+    "analysisWindowSize": 50,
+    "minDataPoints": 10,
+    "patternRecognitionDepth": 20,
+    "signalBroadcastInterval": 5000,
+    "riskLevels": {
+      "low": {
+        "min": 0,
+        "max": 30
+      },
+      "medium": {
+        "min": 31,
+        "max": 60
+      },
+      "high": {
+        "min": 61,
+        "max": 100
+      }
+    }
+  },
+  "api": {
+    "aviatorDataSource": "https://api.aviator-game.com/v1/results",
+    "fallbackDataSource": "https://backup-api.aviator-game.com/v1/results",
+    "requestTimeout": 5000,
+    "retryAttempts": 3
+  },
+  "signals": {
+    "broadcastInterval": 3000,
+    "historyBufferSize": 100,
+    "minConfidenceForBroadcast": 50,
+    "signalTypes": ["BET", "WAIT", "CASH_OUT"],
+    "rateLimitPerClient": {
+      "maxRequests": 60,
+      "windowMs": 60000
+    }
+  },
+  "security": {
+    "enableAuthentication": false,
+    "sessionTimeout": 3600000,
+    "maxSessionsPerIP": 5,
+    "cors": {
+      "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
+      "credentials": true
+    }
+  },
+  "logging": {
+    "level": "info",
+    "enableFileLogging": true,
+    "logDirectory": "./logs",
+    "maxLogFiles": 7
+  }
+}
